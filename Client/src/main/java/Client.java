@@ -2,10 +2,11 @@ import java.io.*;
 import java.net.Socket;
 
 public class Client {
-
+// бинарная версия
     public static void main(String[] args) {
         binaryClient();
     }
+
     public static void binaryClient () {
         try (Socket socket = new Socket("localhost", 8089)) {
             File file = new File("client\\src\\file.txt");
