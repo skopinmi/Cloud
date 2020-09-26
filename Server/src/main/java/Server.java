@@ -15,9 +15,12 @@ public class Server {
             System.out.println("Server is listening...");
             try (Socket socket = serverSocket.accept();
                 BufferedInputStream inputStream = new BufferedInputStream(socket.getInputStream())) {
-                System.out.println("Client is recieved");
-
-
+                System.out.println("Client is received");
+/*
+    чтение символов из входящего потока
+    метка % - начало передачи команды
+    метка $ - начало передачи файла
+ */
                 int n;
                 while ((n = inputStream.read()) != -1) {
                     if ((char) n == '%') {
@@ -31,42 +34,57 @@ public class Server {
             }
 
         } catch (IOException e) {
-            System.out.println(e);
+            e.printStackTrace();
         }
     }
 
-//    чтение команды
+//  чтение команды
 
     public static String readCommand (BufferedInputStream inputStream) throws IOException {
         int n;
-        String command = "";
+        StringBuilder command = new StringBuilder();
         while ((n = inputStream.read()) != - 1) {
-            if ((char) n == ' ') {
+//  конец команды '.'
+            if ((char) n == '.') {
                 break;
             }
-            command += (char) n;
+            command.append((char) n);
         }
-        return command;
+        return command.toString();
     }
 
 //  чтение и запись файла на сервер
 
     public static void readAndWriteFile (BufferedInputStream inputStream) throws IOException {
         int n;
-        String fileName = "";
+        StringBuilder fileName = new StringBuilder();
+        StringBuilder fileSize = new StringBuilder();
         FileOutputStream fileOutputStream;
-        while ((n = inputStream.read()) != -1) {
 //  чтение имени файла - конец $
+        while ((n = inputStream.read()) != -1) {
             if (n == '$') {
                 break;
             }
-            fileName += (char) n;
+            fileName.append((char) n);
         }
+        System.out.println("Имя файла " + fileName.toString());
+//  чтение размера файла - конец $
+        while ((n = inputStream.read()) != -1) {
+            if (n == '$') {
+                break;
+            }
+            fileSize.append((char) n);
+        }
+        System.out.println("Размер файла " + fileSize.toString());
 //  чтение и запись файла
-        fileOutputStream = new FileOutputStream (fileName, true);
+        fileOutputStream = new FileOutputStream (fileName.toString(), true);
+/*
+    использовал FileOutputStream - с возможностью дозаписывания < при повторной отпаравке и отправке
+    файла с тем же именем будет дозапись в существующий!
+    ТРЕБУЕТ ДОРАБОТКИ
+ */
         while ((n = inputStream.read()) != -1) {
             fileOutputStream.write(n);
         }
     }
-
 }
