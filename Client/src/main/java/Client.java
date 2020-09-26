@@ -13,7 +13,7 @@ public class Client {
             sendCommand("qwe;", socket);
             sendFile(file, socket);
         } catch (IOException e) {
-            System.out.println(e);
+            e.printStackTrace();
         }
 
     }
@@ -27,18 +27,20 @@ public class Client {
             for (int i = 0; i < fileName.length(); i++) {
                 socket.getOutputStream().write((int)fileName.charAt(i));
             }
-//    определение размера файла и отправка  < надо делать
-//            socket.getOutputStream().write((int)'$');
-//            long fileSize = file.length();
-//
-//            socket.getOutputStream().write((int) 'S');
+/*
+    определение размера файла и отправка
+    из строки с единицей измерения
+ */
+            long fileSize = file.length();
+            String fileSizeSt = "$ " + fileSize + " byte ";
+            for (int i = 0; i < fileSizeSt.length(); i++) {
+                socket.getOutputStream().write((int)fileSizeSt.charAt(i));
+            }
 //    отправляем содержимое
             int n;
             socket.getOutputStream().write((int)'$');
-
             while ((n = out.read()) != -1) {
                 socket.getOutputStream().write(n);
-                System.out.println(n);
             }
 
             System.out.println("отправил файл");
@@ -47,7 +49,7 @@ public class Client {
         }
     }
 
-//    отправляем команду разделитель %
+//    отправляем команду (разделитель %)
     public static void sendCommand (String com, Socket socket){
         com = "%" + com;
         byte [] command = com.getBytes();
