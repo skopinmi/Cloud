@@ -46,11 +46,11 @@ public class CommandService {
 //                System.out.println("Move");
 //                break;
 //            }
-//            case "/show" : {
-//                System.out.println("Show");
-//                show(tokens [1]);
-//                break;
-//            }
+            case "show" : {
+                System.out.println("Show");
+                show(tokens [1]);
+                break;
+            }
 //            default: {
 //                System.out.println("неизвестная команда");
 //                break;
