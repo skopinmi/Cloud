@@ -24,13 +24,13 @@ public class AuthServiceHandler extends ChannelInboundHandlerAdapter {
         }
 
         String input = DecoderService.byteToString(msg);
-        System.out.println(input);
 
         if (input.split(" ")[0].equals("/auth")) {
             String login = input.split(" ")[1];
             String pass = input.split(" ")[2];
             authOk = AuthService.getNickByLoginAndPass(login, pass);
             if (authOk) {
+                ctx.pipeline().addLast(new CommandHandler(login), new FileReadHandler(login) );
                 System.out.println("Подключен клиент " + login);
                 ctx.writeAndFlush("соединение установленно\n");
             } else {

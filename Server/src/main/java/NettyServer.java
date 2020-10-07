@@ -20,11 +20,11 @@ public class NettyServer implements Runnable{
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast( new ReportHandler(), new AuthServiceHandler(), new CommandHandler());
+                            ch.pipeline().addLast( new ReportHandler(), new AuthServiceHandler());
                         }
-                    });
-//            .childOption(ChannelOption.SO_KEEPALIVE, true);
-            ChannelFuture channelFuture = server.bind(8185).sync();
+                    })
+            .childOption(ChannelOption.SO_KEEPALIVE, true);
+            ChannelFuture channelFuture = server.bind(8085).sync();
             channelFuture.channel().closeFuture().sync();
         } catch (InterruptedException e) {
             e.printStackTrace();
