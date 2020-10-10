@@ -11,38 +11,66 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 public class CommandHandler extends ChannelInboundHandlerAdapter {
     public static String login;
-    private boolean isFile = false;
+    public static FirstByteTypeData firstByteTypeData = FirstByteTypeData.EMPTY;
+    private static String result = null;
 
     public CommandHandler(String login) {
         super();
-        this.login = login;
+        CommandHandler.login = login;
     }
 
+
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        ByteBuf buf = (ByteBuf) msg;
-        char one = (char) buf.readByte();
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
         /*
+            если запушен процесс получения файла
+            msg в следующий handler
+         */
+        if (firstByteTypeData == FirstByteTypeData.FILE) {
+            ctx.fireChannelRead(msg);
+            return;
+        }
+
+        ByteBuf buf = (ByteBuf) msg;
+        if (buf.readableBytes() < 1) {
+            return;
+        }
+
+        if (firstByteTypeData == FirstByteTypeData.EMPTY || firstByteTypeData == FirstByteTypeData.ERROR) {
+            byte firstByte = buf.readByte();
+            firstByteTypeData = FirstByteTypeData.getFirstByte(firstByte);
+        }
+         /*
             в первый байт байт сообщения
             '0' - команда
             '1' - файл
 
          */
 
-        if (one == '0') {
+        if (firstByteTypeData == FirstByteTypeData.COMMAND) {
             /*
-
+                обрабатываем команду
              */
-            byte two = buf.readByte();
-            String com = DecoderService.byteToString(buf, two);
+            if (buf.readableBytes() < 1) {
+                return;
+            }
+            byte secondByte = buf.readByte();
+            String com = DecoderService.byteToString(buf, secondByte);
             String [] tokens = com.split(" ");
             commandChanger(tokens);
+            firstByteTypeData = FirstByteTypeData.EMPTY;
 
-        } else if (one == '1') {
-            System.out.println("переход в файлридфайл для чтения файла");
+        } else if (firstByteTypeData == FirstByteTypeData.FILE) {
+            System.out.println("прием файла");
             ctx.fireChannelRead(msg);
+
         } else {
             ctx.writeAndFlush("Ошибка команды\n");
+            firstByteTypeData = FirstByteTypeData.EMPTY;
+        }
+        if (result != null) {
+            ctx.writeAndFlush(result + "\n");
+            result = null;
         }
     }
 
@@ -51,6 +79,31 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
         cause.printStackTrace();
         ctx.close();
     }
+
+    public enum FirstByteTypeData {
+        EMPTY((byte)-1), COMMAND((byte) 0), FILE((byte) 1), ERROR ((byte)'?');
+
+        byte firstByte;
+
+        FirstByteTypeData(byte firstByte) {
+            this.firstByte = firstByte;
+        }
+
+        public static FirstByteTypeData getFirstByte(byte firstByte) {
+            if (firstByte == -1) {
+                return EMPTY;
+            }
+            if (firstByte == 0) {
+                return COMMAND;
+            }
+            if (firstByte == 1) {
+                return FILE;
+            }
+            System.out.println("error - ошибка в первом байте");
+            return ERROR;
+        }
+    }
+
     public static void commandChanger (String [] tokens) {
         switch (tokens [0]) {
             case "show" : {
@@ -58,9 +111,26 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
                 show();
                 break;
             }
+            case "delete" : {
+                try {
+                    Files.deleteIfExists(Paths.get(tokens[1]));
+                    show();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            case "copy" : {
+                try {
+                    Files.copy(Paths.get(tokens[1]), Paths.get(tokens[2]), StandardCopyOption.REPLACE_EXISTING);
+                    show();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             default: {
                 System.out.println("неизвестная команда");
                 System.out.println(tokens[0]);
+                result = "неизвестная команда\n";
                 break;
             }
         }
@@ -70,12 +140,14 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
     пока отображает на сервере :)
  */
     private static void show () {
-        String clientPath = "Server/login1";
+        StringBuilder stringBuilder = new StringBuilder();
+        String clientPath = "Server/" + login;
         try {   Files.walkFileTree(Paths.get(clientPath), new SimpleFileVisitor<Path>() {
 
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                System.out.println(file);
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                stringBuilder.append(file);
+                stringBuilder.append("\n");
                 if (file.getFileName().toString().equals(clientPath)) {
                     return FileVisitResult.TERMINATE;
                 }
@@ -85,5 +157,6 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        result = String.valueOf(stringBuilder);
     }
 }

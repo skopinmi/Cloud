@@ -16,8 +16,7 @@ public class AuthServiceHandler extends ChannelInboundHandlerAdapter {
         AuthService.connect();
     }
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
         if (authOk) {
             ctx.fireChannelRead(msg);
             return;
@@ -30,7 +29,7 @@ public class AuthServiceHandler extends ChannelInboundHandlerAdapter {
             String pass = input.split(" ")[2];
             authOk = AuthService.getNickByLoginAndPass(login, pass);
             if (authOk) {
-                ctx.pipeline().addLast(new CommandHandler(login), new FileReadHandler(login) );
+                ctx.pipeline().addLast(new CommandHandler(login), new FileReadHandler(login));
                 System.out.println("Подключен клиент " + login);
                 ctx.writeAndFlush("соединение установленно\n");
             } else {
@@ -40,7 +39,7 @@ public class AuthServiceHandler extends ChannelInboundHandlerAdapter {
         }
     }
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
         ctx.close();
     }

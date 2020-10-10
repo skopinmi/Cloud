@@ -11,7 +11,8 @@ import io.netty.channel.ChannelPromise;
 public class ReportHandler extends ChannelOutboundHandlerAdapter {
 
     @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+
         String str = (String)msg;
         byte[] arr = str.getBytes();
         ByteBuf buf = ctx.alloc().buffer(arr.length);

@@ -6,7 +6,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import java.io.IOException;
 
 public class NettyServer implements Runnable{
 
@@ -19,11 +18,10 @@ public class NettyServer implements Runnable{
                     .channel(NioServerSocketChannel.class)
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
-                        public void initChannel(SocketChannel ch) throws Exception {
+                        public void initChannel(SocketChannel ch) {
                             ch.pipeline().addLast( new ReportHandler(), new AuthServiceHandler());
                         }
-                    })
-            .childOption(ChannelOption.SO_KEEPALIVE, true);
+                    }).childOption(ChannelOption.SO_KEEPALIVE, true);
             ChannelFuture channelFuture = server.bind(8085).sync();
             channelFuture.channel().closeFuture().sync();
         } catch (InterruptedException e) {
@@ -33,10 +31,6 @@ public class NettyServer implements Runnable{
             connectGroup.shutdownGracefully();
         }
     }
-
-//    public static void main(String[] args) throws InterruptedException, IOException {
-//        new Thread(new NettyServer()).start();
-//    }
 }
 
 

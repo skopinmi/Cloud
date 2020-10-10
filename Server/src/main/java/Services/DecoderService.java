@@ -24,15 +24,4 @@ public class DecoderService {
         }
         return stringBuilder.toString();
     }
-
-    public static String byteToStringIsReadable (Object msg) {
-        ByteBuf buf = (ByteBuf) msg;
-        StringBuilder stringBuilder = new StringBuilder();
-        while (buf.isReadable()) {
-            char a = (char) buf.readByte();
-            System.out.print(a);
-            stringBuilder.append(a);
-        }
-        return stringBuilder.toString();
-    }
 }
