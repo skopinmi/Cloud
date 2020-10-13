@@ -2,6 +2,8 @@ import Services.DecoderService;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -65,7 +67,10 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
             ctx.fireChannelRead(msg);
 
         } else if (firstByteTypeData == FirstByteTypeData.FILE_OUT) {
-            ctx.fireChannelRead(msg);
+            byte secondByte = buf.readByte();
+            String filePath = DecoderService.byteToString(buf, secondByte);
+            File file = new File(filePath);
+            ctx.pipeline().addLast(new FileSendHandler(file));
         } else {
             ctx.writeAndFlush("Ошибка команды\n");
             firstByteTypeData = FirstByteTypeData.EMPTY;
