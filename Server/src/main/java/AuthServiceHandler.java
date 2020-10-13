@@ -15,6 +15,7 @@ public class AuthServiceHandler extends ChannelInboundHandlerAdapter {
     static {
         AuthService.connect();
     }
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         if (authOk) {

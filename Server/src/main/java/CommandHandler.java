@@ -26,7 +26,7 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
             если запушен процесс получения файла
             msg в следующий handler
          */
-        if (firstByteTypeData == FirstByteTypeData.FILE) {
+        if (firstByteTypeData == FirstByteTypeData.FILE_IN) {
             ctx.fireChannelRead(msg);
             return;
         }
@@ -60,10 +60,12 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
             commandChanger(tokens);
             firstByteTypeData = FirstByteTypeData.EMPTY;
 
-        } else if (firstByteTypeData == FirstByteTypeData.FILE) {
+        } else if (firstByteTypeData == FirstByteTypeData.FILE_IN) {
             System.out.println("прием файла");
             ctx.fireChannelRead(msg);
 
+        } else if (firstByteTypeData == FirstByteTypeData.FILE_OUT) {
+            ctx.fireChannelRead(msg);
         } else {
             ctx.writeAndFlush("Ошибка команды\n");
             firstByteTypeData = FirstByteTypeData.EMPTY;
@@ -81,7 +83,7 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
     }
 
     public enum FirstByteTypeData {
-        EMPTY((byte)-1), COMMAND((byte) 0), FILE((byte) 1), ERROR ((byte)'?');
+        EMPTY((byte)-1), COMMAND((byte) 0), FILE_IN((byte) 1), FILE_OUT((byte) 2), ERROR ((byte)'?');
 
         byte firstByte;
 
@@ -97,7 +99,10 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
                 return COMMAND;
             }
             if (firstByte == 1) {
-                return FILE;
+                return FILE_IN;
+            }
+            if (firstByte == 2) {
+                return FILE_OUT;
             }
             System.out.println("error - ошибка в первом байте");
             return ERROR;

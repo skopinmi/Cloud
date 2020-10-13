@@ -42,17 +42,17 @@ public class NettyClient implements Runnable {
                 но часто возникает ошибка при этом команда выполняется
              */
 
-//            Scanner clientCommandReader = new Scanner(System.in);
-//            String clientCommand = "";
-//            do {
-//                try {
-//                    clientCommand = clientCommandReader.nextLine();
-//                    changer(clientCommand, out);
-//
-//                } catch (Exception e) {
-//                    System.out.println("не удалось ");
-//                }
-//            } while (!clientCommand.equals("end"));
+            Scanner clientCommandReader = new Scanner(System.in);
+            String clientCommand = "";
+            do {
+                try {
+                    clientCommand = clientCommandReader.nextLine();
+                    changer(clientCommand, out);
+
+                } catch (Exception e) {
+                    System.out.println("не удалось ");
+                }
+            } while (!clientCommand.equals("end"));
 
 
 //      тестовая часть
@@ -68,8 +68,8 @@ public class NettyClient implements Runnable {
 
 
              */
-            sendCommand("show", out);
-            Thread.sleep(1000);
+//            sendCommand("show", out);
+//            Thread.sleep(1000);
 
             /*
                 метод посылающий файл
@@ -77,12 +77,12 @@ public class NettyClient implements Runnable {
 //                File file = new File("Client/login1/netty-servers.zip");
 //            при попытке послать большой файл выбрасывает исключение
 
-                File file = new File("Client/login1/file.txt");
-                sendFile(file, out);
-                Thread.sleep(1000);
-
-                sendCommand("show", out);
-                Thread.sleep(1000);
+//                File file = new File("Client/login1/file.txt");
+//                sendFile(file, out);
+//                Thread.sleep(1000);
+//
+//                sendCommand("show", out);
+//                Thread.sleep(1000);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -103,36 +103,40 @@ public class NettyClient implements Runnable {
     //    отправляем файл
 
     public static void sendFile (File file, DataOutputStream out) {
-
+        try {
+            out.write(1);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         int fileNameSize = file.getName().length();
         byte [] fileNameBytes = file.getName().getBytes();
         long fileSize = file.length();
         int x;
         try (DataInputStream in = new DataInputStream(new FileInputStream(file.getPath()))) {
-            out.writeByte(1);
             out.writeInt(fileNameSize);
             out.write(fileNameBytes);
             out.writeLong(fileSize);
-            long partOfFile = fileSize / 20 - 1;
-            long howManyBytes = 0;
+            byte [] buf = new byte[1024];
             while ((x = in.read()) != -1) {
-                out.writeByte(x);
-                howManyBytes++;
-                if (howManyBytes == partOfFile) {
-                    System.out.print(".");
-                    howManyBytes = 0;
-                }
-                /*
-                    неизвесная магия - без задержки не работает прием на сервере...
-                 */
-                Thread.sleep(1);
+//                out.writeInt(x);
+                out.write(buf, 0, x);
+                System.out.print("+");
             }
-        } catch (IOException  e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (Exception  e) {
             e.printStackTrace();
         }
         System.out.println("отправил файл");
+
+
+        System.out.println("");
+        while (true) {
+            System.out.print(".");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public static void sendCommand (String com, DataOutputStream out) throws IOException {

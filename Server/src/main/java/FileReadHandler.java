@@ -12,7 +12,7 @@ public class FileReadHandler extends ChannelInboundHandlerAdapter {
     String fileName = null;
     byte[] fileNameBytes = null;
     long fileSize = -1;
-    long readBytes = 1;
+    long readBytes = 0;
     OutputStream out;
 
     public FileReadHandler(String login) {
@@ -27,46 +27,41 @@ public class FileReadHandler extends ChannelInboundHandlerAdapter {
         ByteBuf buf = (ByteBuf) msg;
 
         if (partOfFile == PartOfFileMsg.FILE_NAME_SIZE) {
-            if (buf.readableBytes() < 4) {
-                return;
-            }
-            fileNameSize = buf.readInt();
-            partOfFile = PartOfFileMsg.FILE_NAME_BYTES;
+            if (buf.readableBytes() >= 4) {
+                fileNameSize = buf.readInt();
+                partOfFile = PartOfFileMsg.FILE_NAME_BYTES;
 
-            System.out.println(fileNameSize + " < WHY? > ");
+                System.out.println(fileNameSize + " < WHY? > ");
+            }
         }
 
         if (partOfFile == PartOfFileMsg.FILE_NAME_BYTES) {
-            if (buf.readableBytes() < fileNameSize) {
-                return;
-            }
-            fileNameBytes = new byte[fileNameSize];
-            buf.readBytes(fileNameBytes);
-            fileName = new String(fileNameBytes);
-            partOfFile = PartOfFileMsg.FILE_SIZE;
-            out = new FileOutputStream("Server/" + login + "/" + fileName);
+            if (buf.readableBytes() >= fileNameSize) {
+                fileNameBytes = new byte[fileNameSize];
+                buf.readBytes(fileNameBytes);
+                fileName = new String(fileNameBytes);
+                partOfFile = PartOfFileMsg.FILE_SIZE;
+                out = new FileOutputStream("Server/" + login + "/" + fileName);
 
-            System.out.println(fileName);
+                System.out.println(fileName);
+            }
         }
 
         if (partOfFile == PartOfFileMsg.FILE_SIZE) {
-            if (buf.readableBytes() < 8) {
-                return;
-            }
-            fileSize = buf.readLong();
-            partOfFile = PartOfFileMsg.FILE_BODY;
+            if (buf.readableBytes() >= 8) {
+                fileSize = buf.readLong();
+                partOfFile = PartOfFileMsg.FILE_BODY;
 
-            System.out.println(fileSize);
+                System.out.println(fileSize);
+            }
         }
 
         if (partOfFile == PartOfFileMsg.FILE_BODY) {
-            if (buf.readableBytes() < 1) {
-                return;
-            }
-            if (readBytes != fileSize) {
-                out.write(buf.readByte());
-                readBytes++;
-            }
+                if (buf.readableBytes() > 0) {
+                    out.write(buf.readByte());
+                    readBytes++;
+                    System.out.println(readBytes);
+                }
         }
 
         if (readBytes == fileSize) {
@@ -75,10 +70,10 @@ public class FileReadHandler extends ChannelInboundHandlerAdapter {
             fileName = "";
             fileNameBytes = null;
             fileSize = -1;
-            readBytes = 1;
+            readBytes = 0;
             out.close();
             buf.release();
-            CommandHandler.firstByteTypeData = CommandHandler.FirstByteTypeData.getFirstByte((byte)-1);
+            CommandHandler.firstByteTypeData = CommandHandler.FirstByteTypeData.getFirstByte((byte) -1);
             ctx.writeAndFlush("файл сервером принят\n");
             System.out.println("файл принят");
         }
