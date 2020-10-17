@@ -12,7 +12,7 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
-            <version>4.1.42.Final</version>
+            <version>4.1.53.Final</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc -->
         <dependency>
@@ -25,7 +25,6 @@
     <modules>
         <module>Client</module>
         <module>Server</module>
-        <module>CloudServer</module>
     </modules>
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>

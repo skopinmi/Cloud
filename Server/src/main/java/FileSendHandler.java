@@ -14,7 +14,7 @@ public class FileSendHandler extends ChannelOutboundHandlerAdapter {
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
-
+        ctx.writeAndFlush("файл");
         int fileNameSize = file.getName().length();
         byte [] fileNameBytes = file.getName().getBytes();
         long fileSize = file.length();

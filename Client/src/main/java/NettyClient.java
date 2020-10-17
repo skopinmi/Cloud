@@ -7,27 +7,52 @@ import java.util.Scanner;
 
 public class NettyClient implements Runnable {
 
+    String login = "login1";
+
     @Override
     public void run() {
         try (Socket socket = new Socket("localhost", 8085);
              DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             Scanner sc = new Scanner(socket.getInputStream())){
-
+             DataInputStream in = new DataInputStream(socket.getInputStream())){
+             Scanner sc = new Scanner(socket.getInputStream());
             /*
                отдельный поток для чтения сообщений от сервера
              */
+
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     while (true) {
-                        String a = sc.nextLine();
-                        System.out.println(a);
+                        String a = null;
+//                        try {
+
+                            a = sc.nextLine();
+                            System.out.println(a);
+
+                            /*
+                                скачивание файла с сервера - не работает пока
+                             */
+//                            if (a.equals("файл")) {
+//                                int fileNameSize = in.readByte();
+//                                byte[] buff = new byte[fileNameSize];
+//                                for (int i = 0; i < buff.length; i++) {
+//                                    buff[i] = in.readByte();
+//                                }
+//                                String fileName = new String(buff);
+//                                long fileSize = in.readLong();
+//                                FileOutputStream outF = new FileOutputStream("Client/" + login + "/" + fileName);
+//
+//                                for (long i = 0; i < fileSize; i++) {
+//                                    outF.write(in.readByte());
+//                                }
+//                            }
+//                        } catch (Exception e){
+//                            e.printStackTrace();
+//
+//                        }
                     }
                 }
             }).start();
-
-
-
 
 
             /*
@@ -56,6 +81,7 @@ public class NettyClient implements Runnable {
 
 
 //      тестовая часть
+
             /*
                 метод отправляющий команды первый байт '0'
                 тестовая команда для CommandHandler сервера
@@ -65,20 +91,24 @@ public class NettyClient implements Runnable {
                 show - выводит содержимое репозиротия на сервере
                 send [путь к файлу] - отправляет файл на сервер
                 delete [путь к файлу] - удаляет файл
-
-
              */
+
 //            sendCommand("show", out);
 //            Thread.sleep(1000);
 
             /*
                 метод посылающий файл
              */
+
 //                File file = new File("Client/login1/netty-servers.zip");
 //            при попытке послать большой файл выбрасывает исключение
 
 //                File file = new File("Client/login1/file.txt");
 //                sendFile(file, out);
+//                while (true) {
+//                    System.out.print(".");
+//                    Thread.sleep(100);
+//                }
 //                Thread.sleep(1000);
 //
 //                sendCommand("show", out);
@@ -95,6 +125,9 @@ public class NettyClient implements Runnable {
         if (tokens[0].equals("send")) {
             File file = new File(tokens[1]);
             sendFile(file, out);
+        } else if (tokens[0].equals("download")) {
+            File file = new File(tokens[1]);
+            downloadFile(file, out);
         } else {
             sendCommand(command, out);
         }
@@ -103,49 +136,48 @@ public class NettyClient implements Runnable {
     //    отправляем файл
 
     public static void sendFile (File file, DataOutputStream out) {
-        try {
-            out.write(1);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
         int fileNameSize = file.getName().length();
         byte [] fileNameBytes = file.getName().getBytes();
         long fileSize = file.length();
         int x;
         try (DataInputStream in = new DataInputStream(new FileInputStream(file.getPath()))) {
+            out.writeByte(1);
             out.writeInt(fileNameSize);
             out.write(fileNameBytes);
             out.writeLong(fileSize);
             byte [] buf = new byte[1024];
-            while ((x = in.read()) != -1) {
-//                out.writeInt(x);
+            while ((x = in.read(buf)) != -1) {
+//                out.writeByte(x);
+//                Thread.sleep(1);
                 out.write(buf, 0, x);
-                System.out.print("+");
             }
         } catch (Exception  e) {
             e.printStackTrace();
         }
         System.out.println("отправил файл");
-
-
         System.out.println("");
-        while (true) {
-            System.out.print(".");
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     public static void sendCommand (String com, DataOutputStream out) throws IOException {
         byte[] command = com.getBytes();
-        out.write(0);
+        out.writeByte(0);
         // первый байт размер команды
-        out.write(command.length);
+        out.writeByte(command.length);
         out.write(command);
         System.out.println("отправил команду");
 
+    }
+
+
+//  не работает
+
+    public static void downloadFile (File file, DataOutputStream out) throws IOException {
+        byte[] command = file.getPath().getBytes();
+        out.writeByte(2);
+        // первый байт размер команды
+        out.writeByte(command.length);
+        out.write(command);
+        System.out.println("отправил запрос на скачивание файла " + file.getPath());
     }
 }
