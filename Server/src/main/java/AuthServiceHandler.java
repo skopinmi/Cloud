@@ -33,9 +33,9 @@ public class AuthServiceHandler extends ChannelInboundHandlerAdapter {
             if (authOk) {
                 ctx.pipeline().addLast(new CommandHandler(login));
                 System.out.println("Подключен клиент " + login);
-                ctx.writeAndFlush(Services.DecoderService.stringToByteBuf("соединение установленно\n"));
+                ctx.writeAndFlush(Services.DecoderService.stringToByteBuf("/connected\n/"));
             } else {
-                ctx.writeAndFlush(Services.DecoderService.stringToByteBuf("Ошибка ввода login или password\n"));
+                ctx.writeAndFlush(Services.DecoderService.stringToByteBuf("/Error login or password\n/"));
                 System.out.println("Ошибка ввода login или password");
             }
         }

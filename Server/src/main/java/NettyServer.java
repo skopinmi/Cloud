@@ -22,6 +22,7 @@ public class NettyServer implements Runnable{
                             ch.pipeline().addLast( new AuthServiceHandler());
                         }
                     }).childOption(ChannelOption.SO_KEEPALIVE, true);
+            System.out.println("Сервер запущен ... ");
             ChannelFuture channelFuture = server.bind(8085).sync();
             channelFuture.channel().closeFuture().sync();
         } catch (InterruptedException e) {

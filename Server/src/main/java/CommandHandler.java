@@ -12,7 +12,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 public class CommandHandler extends ChannelInboundHandlerAdapter {
 
-    private String login;
+    private final String login;
     public FirstByteTypeData firstByteTypeData = FirstByteTypeData.EMPTY;
     private String result = null;
 
@@ -25,8 +25,8 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
     OutputStream out;
 
     String filePath = null;
-    int filePathSize = 0;
-    OutputStream in;
+    byte filePathSize = -1;
+    InputStream in;
     File fileOut;
 
 
@@ -39,11 +39,156 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
+
+        ByteBuf buf = (ByteBuf) msg;
+
+//        if (firstByteTypeData == FirstByteTypeData.FILE_IN) {
+//
+////            if (partOfFile == PartOfFileMsg.FILE_NAME_SIZE) {
+////                if (buf.readableBytes() >= 4) {
+////                    fileNameSize = buf.readInt();
+////                    partOfFile = PartOfFileMsg.FILE_NAME_BYTES;
+////                    System.out.println(fileNameSize);
+////                }
+////            }
+////
+////            if (partOfFile == PartOfFileMsg.FILE_NAME_BYTES) {
+////                if (buf.readableBytes() >= fileNameSize) {
+////                    fileNameBytes = new byte[fileNameSize];
+////                    buf.readBytes(fileNameBytes);
+////                    fileName = new String(fileNameBytes);
+////                    partOfFile = PartOfFileMsg.FILE_SIZE;
+////                    try {
+////                        out = new FileOutputStream("Server/" + login + "/" + fileName);
+////                    } catch (FileNotFoundException e) {
+////                        e.printStackTrace();
+////                    }
+////                    System.out.println(fileName);
+////                }
+////            }
+////
+////            if (partOfFile == PartOfFileMsg.FILE_SIZE) {
+////                if (buf.readableBytes() >= 8) {
+////                    fileSize = buf.readLong();
+////                    partOfFile = PartOfFileMsg.FILE_BODY;
+////                    System.out.println(fileSize);
+////                }
+////            }
+////
+////            if (partOfFile == PartOfFileMsg.FILE_BODY) {
+////                while (buf.isReadable()) {
+////                    try {
+////                        out.write(buf.readByte());
+////                    } catch (IOException e) {
+////                        e.printStackTrace();
+////                    }
+////                    readBytes++;
+//////                    System.out.println(readBytes);
+////                }
+////            }
+////
+////            if (readBytes == fileSize) {
+////                partOfFile = PartOfFileMsg.FILE_NAME_SIZE;
+////                fileNameSize = -1;
+////                fileName = "";
+////                fileNameBytes = null;
+////                fileSize = -1;
+////                readBytes = 0;
+////                try {
+////                    out.close();
+////                } catch (IOException e) {
+////                    e.printStackTrace();
+////                }
+////                buf.release();
+////                firstByteTypeData = FirstByteTypeData.getFirstByte((byte) -1);
+////                ctx.writeAndFlush(Services.DecoderService.stringToByteBuf("/файл сервером принят\n"));
+////                System.out.println("файл принят");
+////            }
+//        }
+//        /*
+//            отправка файла
+//         */
+//        if (firstByteTypeData == FirstByteTypeData.FILE_OUT) {
+//
+////            if (partOfFile == PartOfFileMsg.FILE_NAME_SIZE) {
+////                if (buf.readableBytes() >= 4) {
+////                    filePathSize = buf.readInt();
+////                    partOfFile = PartOfFileMsg.FILE_NAME_BYTES;
+////                    System.out.println(filePathSize);
+////                }
+////            }
+////            if (partOfFile == PartOfFileMsg.FILE_NAME_BYTES) {
+////                if (buf.readableBytes() >= filePathSize) {
+////                    byte[] filePathBytes = new byte[filePathSize];
+////                    buf.readBytes(filePathBytes);
+////                    filePath = new String(filePathBytes);
+////                    partOfFile = PartOfFileMsg.FILE_SIZE;
+////                    try {
+////                        in = new FileOutputStream(filePath);
+////                    } catch (FileNotFoundException e) {
+////                        e.printStackTrace();
+////                    }
+////                    System.out.println(filePath);
+////                    fileOut = new File(filePath);
+////                    fileNameSize = fileOut.getName().length();
+////                    fileNameBytes = fileOut.getName().getBytes();
+////                    fileSize = fileOut.length();
+////
+////                    int bufSize = fileNameSize + fileNameBytes.length + 1 ;
+////                    System.out.println(" ghg " + fileOut.getName());
+////                    ByteBuf bufRez = ctx.alloc().buffer(bufSize);
+////
+////                    bufRez.writeByte((byte) '/');
+////                    buf.writeInt(fileNameSize);
+////                    buf.writeBytes(fileNameBytes);
+////                    ctx.writeAndFlush(bufRez);
+////
+////                    partOfFile = PartOfFileMsg.FILE_NAME_SIZE;
+////                    firstByteTypeData = FirstByteTypeData.EMPTY;
+////                    System.out.println("отправил файл");
+////                    filePath = null;
+////                    filePathSize = 0;
+////                }
+////            }
+//        }
+
         /*
-            если запушен процесс получения файла - чтение файла
+            если не идет загрузка или отправка файла, то ...
          */
-        if (firstByteTypeData == FirstByteTypeData.FILE_IN) {
-            ByteBuf buf = (ByteBuf) msg;
+
+        if (buf.readableBytes() < 1) {
+            return;
+        }
+
+        if (firstByteTypeData == FirstByteTypeData.EMPTY || firstByteTypeData == FirstByteTypeData.ERROR) {
+            byte firstByte = buf.readByte();
+            firstByteTypeData = FirstByteTypeData.getFirstByte(firstByte);
+        }
+         /*
+            в первый байт байт сообщения
+            '0' - команда
+            '1' - файл in
+            '2' - файл out
+         */
+
+        if (firstByteTypeData == FirstByteTypeData.COMMAND) {
+            /*
+                обрабатываем команду
+             */
+            if (buf.readableBytes() < 1) {
+                return;
+            }
+            byte secondByte = buf.readByte();
+            String com = DecoderService.byteToString(buf, secondByte);
+            String [] tokens = com.split(" ");
+            commandChanger(tokens);
+            firstByteTypeData = FirstByteTypeData.EMPTY;
+
+        }
+        else if (firstByteTypeData == FirstByteTypeData.FILE_IN) {
+            /*
+                если запушен процесс получения файла - чтение файла
+            */
 
             if (partOfFile == PartOfFileMsg.FILE_NAME_SIZE) {
                 if (buf.readableBytes() >= 4) {
@@ -84,9 +229,7 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
                         e.printStackTrace();
                     }
                     readBytes++;
-//                    System.out.println(readBytes);
                 }
-
             }
 
             if (readBytes == fileSize) {
@@ -103,19 +246,19 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
                 }
                 buf.release();
                 firstByteTypeData = FirstByteTypeData.getFirstByte((byte) -1);
-                ctx.writeAndFlush(Services.DecoderService.stringToByteBuf("файл сервером принят\n"));
+                ctx.writeAndFlush(Services.DecoderService.stringToByteBuf("/file was received\n/"));
                 System.out.println("файл принят");
             }
+
         }
-        /*
-            отправка файла
-         */
-        if (firstByteTypeData == FirstByteTypeData.FILE_OUT) {
-            ByteBuf buf = (ByteBuf) msg;
+        else if (firstByteTypeData == FirstByteTypeData.FILE_OUT) {
+            /*
+                  отправка файла
+            */
 
             if (partOfFile == PartOfFileMsg.FILE_NAME_SIZE) {
-                if (buf.readableBytes() >= 4) {
-                    filePathSize = buf.readInt();
+                if (buf.readableBytes() >= 1) {
+                    filePathSize = buf.readByte();
                     partOfFile = PartOfFileMsg.FILE_NAME_BYTES;
                     System.out.println(filePathSize);
                 }
@@ -127,73 +270,46 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
                     filePath = new String(filePathBytes);
                     partOfFile = PartOfFileMsg.FILE_SIZE;
                     try {
-                        in = new FileOutputStream(filePath);
+                        in = new FileInputStream(filePath);
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }
-                    System.out.println(filePath);
                     fileOut = new File(filePath);
                     fileNameSize = fileOut.getName().length();
                     fileNameBytes = fileOut.getName().getBytes();
                     fileSize = fileOut.length();
 
-                    int bufSize = fileNameSize + fileNameBytes.length + 1 + 8;
-                    System.out.println(" ghg " + fileOut.getName());
-                    ByteBuf bufRez = ctx.alloc().buffer(bufSize);
-                    bufRez.writeByte('/');
+                    System.out.println("Отправляю файл " + fileOut.getName());
+                    ByteBuf bufRez = ctx.alloc().buffer(1024);
+
+                    bufRez.writeByte((byte) '?');
                     bufRez.writeInt(fileNameSize);
                     bufRez.writeBytes(fileNameBytes);
-                    ctx.writeAndFlush(bufRez);
+                    bufRez.writeLong(fileSize);
+                    int x = 0;
+                    byte [] buffer = new byte[1024];
+                    try {
+                        while ((x = in.read(buffer)) != -1) {
+                            System.out.println("+");
+                            bufRez.writeBytes(buffer, 0, x);
+                            ctx.writeAndFlush(bufRez);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    partOfFile = PartOfFileMsg.FILE_NAME_SIZE;
                     firstByteTypeData = FirstByteTypeData.EMPTY;
                     System.out.println("отправил файл");
+                    filePath = null;
+                    filePathSize = -1;
                 }
             }
-        }
-
-        /*
-            если не идет загрузка или отправка файла, то ...
-         */
-
-
-        ByteBuf buf = (ByteBuf) msg;
-        if (buf.readableBytes() < 1) {
-            return;
-        }
-
-        if (firstByteTypeData == FirstByteTypeData.EMPTY || firstByteTypeData == FirstByteTypeData.ERROR) {
-            byte firstByte = buf.readByte();
-            firstByteTypeData = FirstByteTypeData.getFirstByte(firstByte);
-        }
-         /*
-            в первый байт байт сообщения
-            '0' - команда
-            '1' - файл in
-            '2' - файл out
-         */
-
-        if (firstByteTypeData == FirstByteTypeData.COMMAND) {
-            /*
-                обрабатываем команду
-             */
-            if (buf.readableBytes() < 1) {
-                return;
-            }
-            byte secondByte = buf.readByte();
-            String com = DecoderService.byteToString(buf, secondByte);
-            String [] tokens = com.split(" ");
-            commandChanger(tokens);
-            firstByteTypeData = FirstByteTypeData.EMPTY;
-
-        } else if (firstByteTypeData == FirstByteTypeData.FILE_IN) {
-            System.out.println("прием файла");
-        } else if (firstByteTypeData == FirstByteTypeData.FILE_OUT) {
-            System.out.println("отправка файла");
         } else {
-            ctx.writeAndFlush(Services.DecoderService.stringToByteBuf("Ошибка команды\n"));
+            ctx.writeAndFlush(Services.DecoderService.stringToByteBuf("/Ошибка команды\n/"));
             firstByteTypeData = FirstByteTypeData.EMPTY;
         }
         if (result != null) {
-            ctx.writeAndFlush(Services.DecoderService.stringToByteBuf(result));
+            ctx.writeAndFlush(Services.DecoderService.stringToByteBuf('/' + result + '/'));
             result = null;
         }
     }
@@ -232,15 +348,12 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
             default: {
                 System.out.println("неизвестная команда");
                 System.out.println(tokens[0]);
-                result = "неизвестная команда\n";
+                result = "/неизвестная команда\n";
                 break;
             }
         }
     }
-/*
-    show отображает содержимое репозитория на сервере
-    пока отображает на сервере :)
- */
+
     private void show () {
         StringBuilder stringBuilder = new StringBuilder();
         String clientPath = "Server/" + login;
@@ -261,8 +374,6 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
         }
         result = String.valueOf(stringBuilder);
     }
-
-
 
     private enum PartOfFileMsg {
         FILE_NAME_SIZE, FILE_NAME_BYTES, FILE_SIZE, FILE_BODY
