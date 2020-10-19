@@ -31,11 +31,11 @@ public class AuthServiceHandler extends ChannelInboundHandlerAdapter {
             String pass = input.split(" ")[2];
             authOk = AuthService.getNickByLoginAndPass(login, pass);
             if (authOk) {
-                ctx.pipeline().addLast(new CommandHandler(login), new FileReadHandler(login));
+                ctx.pipeline().addLast(new CommandHandler(login));
                 System.out.println("Подключен клиент " + login);
-                ctx.writeAndFlush("соединение установленно\n");
+                ctx.writeAndFlush(Services.DecoderService.stringToByteBuf("соединение установленно\n"));
             } else {
-                ctx.writeAndFlush("Ошибка ввода login или password\n");
+                ctx.writeAndFlush(Services.DecoderService.stringToByteBuf("Ошибка ввода login или password\n"));
                 System.out.println("Ошибка ввода login или password");
             }
         }

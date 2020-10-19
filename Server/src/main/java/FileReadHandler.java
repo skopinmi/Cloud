@@ -25,63 +25,63 @@ public class FileReadHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         ByteBuf buf = (ByteBuf) msg;
-
-//        проверял содержимое buf
-//        for (int i = 0; i < 200; i++) {
-//            System.out.println(i + " байт: " + buf.getByte(i));
+//
+////        проверял содержимое buf
+////        for (int i = 0; i < 200; i++) {
+////            System.out.println(i + " байт: " + buf.getByte(i));
+////        }
+//
+//
+//        if (partOfFile == PartOfFileMsg.FILE_NAME_SIZE) {
+//            if (buf.readableBytes() >= 4) {
+//                fileNameSize = buf.readInt();
+//                partOfFile = PartOfFileMsg.FILE_NAME_BYTES;
+//                System.out.println(fileNameSize);
+//            }
 //        }
-
-
-        if (partOfFile == PartOfFileMsg.FILE_NAME_SIZE) {
-            if (buf.readableBytes() >= 4) {
-                fileNameSize = buf.readInt();
-                partOfFile = PartOfFileMsg.FILE_NAME_BYTES;
-                System.out.println(fileNameSize);
-            }
-        }
-
-        if (partOfFile == PartOfFileMsg.FILE_NAME_BYTES) {
-            if (buf.readableBytes() >= fileNameSize) {
-                fileNameBytes = new byte[fileNameSize];
-                buf.readBytes(fileNameBytes);
-                fileName = new String(fileNameBytes);
-                partOfFile = PartOfFileMsg.FILE_SIZE;
-                out = new FileOutputStream("Server/" + login + "/" + fileName);
-                System.out.println(fileName);
-            }
-        }
-
-        if (partOfFile == PartOfFileMsg.FILE_SIZE) {
-            if (buf.readableBytes() >= 8) {
-                fileSize = buf.readLong();
-                partOfFile = PartOfFileMsg.FILE_BODY;
-                System.out.println(fileSize);
-            }
-        }
-
-        if (partOfFile == PartOfFileMsg.FILE_BODY) {
-            while (buf.isReadable()) {
-//            if (buf.isReadable()) {
-                    out.write(buf.readByte());
-                    readBytes++;
-                    System.out.println(readBytes);
-            }
-
-        }
-
-        if (readBytes == fileSize) {
-            partOfFile = PartOfFileMsg.FILE_NAME_SIZE;
-            fileNameSize = -1;
-            fileName = "";
-            fileNameBytes = null;
-            fileSize = -1;
-            readBytes = 0;
-            out.close();
-            buf.release();
-            CommandHandler.firstByteTypeData = CommandHandler.FirstByteTypeData.getFirstByte((byte) -1);
-            ctx.writeAndFlush("файл сервером принят\n");
-            System.out.println("файл принят");
-        }
+//
+//        if (partOfFile == PartOfFileMsg.FILE_NAME_BYTES) {
+//            if (buf.readableBytes() >= fileNameSize) {
+//                fileNameBytes = new byte[fileNameSize];
+//                buf.readBytes(fileNameBytes);
+//                fileName = new String(fileNameBytes);
+//                partOfFile = PartOfFileMsg.FILE_SIZE;
+//                out = new FileOutputStream("Server/" + login + "/" + fileName);
+//                System.out.println(fileName);
+//            }
+//        }
+//
+//        if (partOfFile == PartOfFileMsg.FILE_SIZE) {
+//            if (buf.readableBytes() >= 8) {
+//                fileSize = buf.readLong();
+//                partOfFile = PartOfFileMsg.FILE_BODY;
+//                System.out.println(fileSize);
+//            }
+//        }
+//
+//        if (partOfFile == PartOfFileMsg.FILE_BODY) {
+//            while (buf.isReadable()) {
+////            if (buf.isReadable()) {
+//                    out.write(buf.readByte());
+//                    readBytes++;
+//                    System.out.println(readBytes);
+//            }
+//
+//        }
+//
+//        if (readBytes == fileSize) {
+//            partOfFile = PartOfFileMsg.FILE_NAME_SIZE;
+//            fileNameSize = -1;
+//            fileName = "";
+//            fileNameBytes = null;
+//            fileSize = -1;
+//            readBytes = 0;
+//            out.close();
+//            buf.release();
+//            firstByteTypeData = CommandHandler.FirstByteTypeData.getFirstByte((byte) -1);
+//            ctx.writeAndFlush("файл сервером принят\n");
+//            System.out.println("файл принят");
+//        }
 
     }
 

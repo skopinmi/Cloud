@@ -19,7 +19,7 @@ public class NettyServer implements Runnable{
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         public void initChannel(SocketChannel ch) {
-                            ch.pipeline().addLast( new ReportHandler(), new AuthServiceHandler());
+                            ch.pipeline().addLast( new AuthServiceHandler());
                         }
                     }).childOption(ChannelOption.SO_KEEPALIVE, true);
             ChannelFuture channelFuture = server.bind(8085).sync();

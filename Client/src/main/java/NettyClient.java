@@ -24,41 +24,23 @@ public class NettyClient implements Runnable {
                 public void run() {
                     while (true) {
                         String a = null;
-//                        try {
-
-                            a = sc.nextLine();
-                            System.out.println(a);
-
-                            /*
-                                скачивание файла с сервера - не работает пока
-                             */
-//                            if (a.equals("файл")) {
-//                                int fileNameSize = in.readByte();
-//                                byte[] buff = new byte[fileNameSize];
-//                                for (int i = 0; i < buff.length; i++) {
-//                                    buff[i] = in.readByte();
-//                                }
-//                                String fileName = new String(buff);
-//                                long fileSize = in.readLong();
-//                                FileOutputStream outF = new FileOutputStream("Client/" + login + "/" + fileName);
-//
-//                                for (long i = 0; i < fileSize; i++) {
-//                                    outF.write(in.readByte());
-//                                }
-//                            }
-//                        } catch (Exception e){
-//                            e.printStackTrace();
-//
-//                        }
+                        a = sc.nextLine();
+                        System.out.println(a);
                     }
                 }
             }).start();
 
+            Scanner clientCommandReader = new Scanner(System.in);
+            String clientCommand = "";
 
             /*
                 авторизация на сервере, возможна из консоли
              */
-
+            System.out.println("Введите логин : ");
+               String login = clientCommandReader.nextLine();
+               System.out.println("Ведите пароль : ");
+               String password = clientCommandReader.nextLine();
+//               sendCommand(("/auth " + login + " " +  password), out);
             sendCommand("/auth login1 password1", out);
             Thread.sleep(2000);
 
@@ -67,8 +49,8 @@ public class NettyClient implements Runnable {
                 но часто возникает ошибка при этом команда выполняется
              */
 
-            Scanner clientCommandReader = new Scanner(System.in);
-            String clientCommand = "";
+//            Scanner clientCommandReader = new Scanner(System.in);
+//            String clientCommand = "";
             do {
                 try {
                     clientCommand = clientCommandReader.nextLine();
@@ -176,7 +158,7 @@ public class NettyClient implements Runnable {
         byte[] command = file.getPath().getBytes();
         out.writeByte(2);
         // первый байт размер команды
-        out.writeByte(command.length);
+        out.writeInt(command.length);
         out.write(command);
         System.out.println("отправил запрос на скачивание файла " + file.getPath());
     }

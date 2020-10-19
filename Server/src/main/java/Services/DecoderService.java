@@ -1,5 +1,10 @@
 package Services;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+
 public class DecoderService {
 
 //    перевод байтов из потока в String
@@ -23,5 +28,10 @@ public class DecoderService {
             stringBuilder.append(a);
         }
         return stringBuilder.toString();
+    }
+
+    public static ByteBuf stringToByteBuf (String string) {
+        byte [] arr = string.getBytes();
+        return Unpooled.copiedBuffer(arr);
     }
 }
