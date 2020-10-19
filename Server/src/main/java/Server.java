@@ -1,8 +1,13 @@
-import java.io.BufferedInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
+/*
+    Проект: Облачное хранилище на Java
+    выполнен с использованием Java фреймворка Netty
+    в рамках курса: Разработка сетевого хранилища на Java
+    Geek University Java-разработки 2020 г.
+
+
+    Сервер
+ */
+
 
 public class Server {
     public static void main(String[] args) {

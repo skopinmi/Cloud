@@ -18,19 +18,18 @@ public class AuthService{
         }
     }
 
-    public static boolean getNickByLoginAndPass (String login, String pass) {
+    public static boolean getNickByLoginAndPass (String login, int pass) {
         String sql = String.format("select password from baza where login = '%s'", login);
         try {
             ResultSet resultSet = statement.executeQuery(sql);
             if(resultSet.next()) {
-                if (resultSet.getString(1).equals(pass)) {
+                if (resultSet.getInt(1) == pass) {
                     return true;
                 }
             }
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+        } catch (SQLException throwable) {
+            throwable.printStackTrace();
         }
         return false;
     }
-
 }

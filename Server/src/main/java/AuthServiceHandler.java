@@ -28,7 +28,8 @@ public class AuthServiceHandler extends ChannelInboundHandlerAdapter {
 
         if (input.split(" ")[0].equals("/auth")) {
             String login = input.split(" ")[1];
-            String pass = input.split(" ")[2];
+            int pass = input.split(" ")[2].hashCode();
+            System.out.println(pass);
             authOk = AuthService.getNickByLoginAndPass(login, pass);
             if (authOk) {
                 ctx.pipeline().addLast(new CommandHandler(login));

@@ -1,9 +1,6 @@
 import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
-/*
-    версия для теста сервера
- */
 
 public class NettyClient implements Runnable {
 
@@ -15,31 +12,6 @@ public class NettyClient implements Runnable {
         try (Socket socket = new Socket("localhost", 8085);
              DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())){
-
-            Scanner clientCommandReader = new Scanner(System.in);
-            String clientCommand = "";
-
-            /*
-                авторизация на сервере, возможна из консоли
-             */
-            do {
-                System.out.print("Введите логин : ");
-                login = clientCommandReader.nextLine();
-//                System.out.print("\n");
-                System.out.print("Ведите пароль : ");
-                String password = clientCommandReader.nextLine();
-//                System.out.print("\n");
-    //               sendCommand(("/auth " + login + " " +  password), out);
-
-    // код ниже для быстрого входа
-
-                sendCommand("/auth login1 password1", out);
-                login = "login1";
-                Thread.sleep(100);
-
-    // код выше для быстрого входа
-
-            } while (answer.equals("соединение установленно\n"));
 
             /*
                отдельный поток для чтения сообщений от сервера
@@ -83,12 +55,46 @@ public class NettyClient implements Runnable {
                 }
             }).start();
 
+            System.out.println("Проект: Облачное хранилище на Java\n" +
+                    "Geek University Java-разработка 2020 г.\n" +
+                    "\n" +
+                    "Процесс авторизации");
+            /*
+                авторизация на сервере, возможна из консоли
+             */
+
+            Scanner clientCommandReader = new Scanner(System.in);
+            String clientCommand = "";
+
+            do {
+                System.out.print("Введите логин : ");
+                login = clientCommandReader.nextLine();
+//                System.out.print("\n");
+                System.out.print("Ведите пароль : ");
+                String password = clientCommandReader.nextLine();
+//                System.out.print("\n");
+    //               sendCommand(("/auth " + login + " " +  password), out);
+
+    // код ниже для быстрого входа
+
+                sendCommand("/auth login1 password1", out);
+                login = "login1";
+                Thread.sleep(100);
+
+    // код выше для быстрого входа
+
+            } while (!answer.equals("connected\n"));
+
+            System.out.println("help - справка");
+
             /*
                 часть кода считывает команды из консоли и выполняет
              */
+
             clientCommandReader = new Scanner(System.in);
             do {
                 try {
+
                     clientCommand = clientCommandReader.nextLine();
                     changer(clientCommand, out);
 
@@ -103,7 +109,7 @@ public class NettyClient implements Runnable {
             /*
                 работают команды:
                 show - выводит содержимое репозиротия на сервере
-                send [путь к файлу] - отправляет файл на сервер
+                send [путь к файлу] - загружает файл на сервер
                 delete [путь к файлу] - удаляет файл
              */
 
@@ -128,9 +134,10 @@ public class NettyClient implements Runnable {
             }
             case "help": {
                 System.out.println("show - выводит содержимое репозиротия на сервере\n" +
-                        "send [путь к файлу] - отправляет файл на сервер\n" +
-                        "download [путь к файлу] - загрузка файлф с сервера\n" +
-                        "delete [путь к файлу] - удаляет файл");
+                        "send [путь к файлу] - загружает файл на сервер\n" +
+                        "download [путь к файлу] - загрузка файла с сервера\n" +
+                        "delete [путь к файлу] - удаляет файл\n" +
+                        "end - выход из программы\n");
                 break;
             }
             default : {
