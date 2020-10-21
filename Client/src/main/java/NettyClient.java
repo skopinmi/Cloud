@@ -6,6 +6,7 @@ public class NettyClient implements Runnable {
 
     String login;
     String answer = "";
+    String clientCommand = "";
 
     @Override
     public void run() {
@@ -56,30 +57,55 @@ public class NettyClient implements Runnable {
             }).start();
 
             System.out.println("Проект: Облачное хранилище на Java\n" +
-                    "Geek University Java-разработка 2020 г.\n" +
+                    "Geek University Java-разработка \n" +
+                    "СПб 2020 г.\n" +
                     "\n" +
-                    "Процесс авторизации");
+                    "Процесс регистрации/авторизации :");
+
+            Scanner clientCommandReader = new Scanner(System.in);
+
+            do {
+                System.out.println("Вы зарегестрированны на сервере?   y/n");
+                clientCommand = clientCommandReader.nextLine();
+            } while (!clientCommand.equals("y") && !clientCommand.equals("n"));
+
+            /*
+                регистрация
+                логин и пароль
+            */
+
+
+            if (clientCommand.equals("n")) {
+                do {
+                    System.out.println("Придумайте и введите login : ");
+                    clientCommand = "/registration " + clientCommandReader.nextLine();
+                    sendCommand(clientCommand, out);
+                    Thread.sleep(100); // пауза для печати ответа из другого потока
+                    if (!answer.equals("loginIsGood\n")) {
+                        System.out.println("login уже используется, проробуйте еще раз.");
+                    }
+                } while (!answer.equals("loginIsGood\n"));
+                System.out.println("Придумайте и введите пароль : ");
+                clientCommand = "/password " + clientCommandReader.nextLine().hashCode();
+                sendCommand(clientCommand, out);
+                Thread.sleep(100); // пауза для печати ответа из другого потока
+            }
+
             /*
                 авторизация на сервере, возможна из консоли
              */
 
-            Scanner clientCommandReader = new Scanner(System.in);
-            String clientCommand = "";
-
             do {
                 System.out.print("Введите логин : ");
                 login = clientCommandReader.nextLine();
-//                System.out.print("\n");
                 System.out.print("Ведите пароль : ");
                 String password = clientCommandReader.nextLine();
-//                System.out.print("\n");
-    //               sendCommand(("/auth " + login + " " +  password), out);
+                sendCommand(("/auth " + login + " " +  password), out);
 
     // код ниже для быстрого входа
 
-                sendCommand("/auth login1 password1", out);
-                login = "login1";
-                Thread.sleep(100);
+//                sendCommand("/auth login1 password1", out);
+//                login = "login1";
 
     // код выше для быстрого входа
 
@@ -103,22 +129,12 @@ public class NettyClient implements Runnable {
                 }
             } while (!clientCommand.equals("end"));
 
-
-//      тестовая часть
-
-            /*
-                работают команды:
-                show - выводит содержимое репозиротия на сервере
-                send [путь к файлу] - загружает файл на сервер
-                delete [путь к файлу] - удаляет файл
-             */
-
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    // выбор команда \ команда на отправку файла
+    // выбор : команда / команда на отправку / получение файла / помощь
 
     public static void changer (String command, DataOutputStream out) throws IOException {
         String [] tokens = command.split(" ");
@@ -137,6 +153,9 @@ public class NettyClient implements Runnable {
                         "send [путь к файлу] - загружает файл на сервер\n" +
                         "download [путь к файлу] - загрузка файла с сервера\n" +
                         "delete [путь к файлу] - удаляет файл\n" +
+                        "copy [путь к файлу] [путь к копии файла] - копирует файл\n" +
+                        "move [путь от куда] [путь куда] - пермещает файл\n" +
+                        "create_dir [путь к новой папке] - создать новую папку\n" +
                         "end - выход из программы\n");
                 break;
             }

@@ -27,6 +27,8 @@ public class DecoderService {
         return stringBuilder.toString();
     }
 
+    // String переводится в байты в ByteBuf
+
     public static ByteBuf stringToByteBuf (String string) {
         byte [] arr = string.getBytes();
         return Unpooled.copiedBuffer(arr);

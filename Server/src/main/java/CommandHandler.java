@@ -12,21 +12,23 @@ import java.nio.file.attribute.BasicFileAttributes;
 public class CommandHandler extends ChannelInboundHandlerAdapter {
 
     private final String login;
-    public FirstByteTypeData firstByteTypeData = FirstByteTypeData.EMPTY;
+    private FirstByteTypeData firstByteTypeData = FirstByteTypeData.EMPTY;
     private String result = null;
+    // при получении команды  - длинна команды
+    byte secondByte = -1;
 
     private PartOfFileMsg partOfFile = PartOfFileMsg.FILE_NAME_SIZE;
-    int fileNameSize = 0;
-    String fileName = null;
-    byte[] fileNameBytes = null;
-    long fileSize = -1;
-    long readBytes = 0;
-    OutputStream out;
+    private int fileNameSize = 0;
+    private String fileName = null;
+    private byte[] fileNameBytes = null;
+    private long fileSize = -1;
+    private long readBytes = 0;
+    private OutputStream out;
 
-    String filePath = null;
-    byte filePathSize = -1;
-    InputStream in;
-    File fileOut;
+    private String filePath = null;
+    private byte filePathSize = -1;
+    private InputStream in;
+    private File fileOut;
 
 
 
@@ -42,7 +44,12 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
         ByteBuf buf = (ByteBuf) msg;
 
         /*
-            если не идет загрузка или отправка файла, то ...
+            если не идет загрузка или отправка файла, то определяется характер сообщения
+            по первому байту
+            '0' - команда
+            '1' - файл in
+            '2' - файл out
+
          */
 
         if (buf.readableBytes() < 1) {
@@ -64,16 +71,23 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
         if (firstByteTypeData == FirstByteTypeData.COMMAND) {
             /*
                 обрабатываем команду
+                определяется размер команды в байтах
              */
-            if (buf.readableBytes() < 1) {
+
+            if (secondByte == -1) {
+                if (buf.readableBytes() < 1) {
+                    return;
+                }
+                secondByte = buf.readByte();
+            }
+            if (buf.readableBytes() < secondByte) {
                 return;
             }
-            byte secondByte = buf.readByte();
             String com = DecoderService.byteToString(buf, secondByte);
             String [] tokens = com.split(" ");
             commandChanger(tokens);
             firstByteTypeData = FirstByteTypeData.EMPTY;
-
+            secondByte = -1;
         }
 
         else if (firstByteTypeData == FirstByteTypeData.FILE_IN) {
@@ -235,7 +249,29 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
             }
             case "copy" : {
                 try {
+                    Files.deleteIfExists(Paths.get(tokens [2]));
+                    Files.createFile(Paths.get(tokens[2]));
                     Files.copy(Paths.get(tokens[1]), Paths.get(tokens[2]), StandardCopyOption.REPLACE_EXISTING);
+                    show();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                break;
+            }
+            case "create_dir" : {
+                try {
+                    Files.createDirectory(Paths.get(tokens[1]));
+                    show();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                break;
+            }
+            case "move" : {
+                try {
+                    Files.deleteIfExists(Paths.get(tokens[2]));
+                    Files.createFile(Paths.get(tokens[2]));
+                    Files.move(Paths.get(tokens[1]), Paths.get(tokens[2]), StandardCopyOption.REPLACE_EXISTING);
                     show();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -256,6 +292,12 @@ public class CommandHandler extends ChannelInboundHandlerAdapter {
         String clientPath = "Server/" + login;
         try {   Files.walkFileTree(Paths.get(clientPath), new SimpleFileVisitor<Path>() {
 
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                stringBuilder.append(dir);
+                stringBuilder.append("\n");
+                return FileVisitResult.CONTINUE;
+            }
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                 stringBuilder.append(file);

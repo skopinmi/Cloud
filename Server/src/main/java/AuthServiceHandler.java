@@ -2,6 +2,9 @@ import Services.AuthService;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import Services.DecoderService;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 /*
     handler берет кусок байтов с логином и паролем для проверки соответсвтвия логина и пароля,
     при первичном подключении
@@ -12,6 +15,7 @@ import Services.DecoderService;
 public class AuthServiceHandler extends ChannelInboundHandlerAdapter {
 
     private boolean authOk = false;
+    private String login = null;
     static {
         AuthService.connect();
     }
@@ -25,11 +29,11 @@ public class AuthServiceHandler extends ChannelInboundHandlerAdapter {
         }
 
         String input = DecoderService.byteToString(msg);
+        String [] partOfInput = input.split(" ");
 
-        if (input.split(" ")[0].equals("/auth")) {
-            String login = input.split(" ")[1];
-            int pass = input.split(" ")[2].hashCode();
-            System.out.println(pass);
+        if (partOfInput [0].equals("/auth")) {
+            String login = partOfInput [1];
+            int pass = partOfInput [2].hashCode();
             authOk = AuthService.getNickByLoginAndPass(login, pass);
             if (authOk) {
                 ctx.pipeline().addLast(new CommandHandler(login));
@@ -38,6 +42,27 @@ public class AuthServiceHandler extends ChannelInboundHandlerAdapter {
             } else {
                 ctx.writeAndFlush(Services.DecoderService.stringToByteBuf("/Error login or password\n/"));
                 System.out.println("Ошибка ввода login или password");
+            }
+        }
+        /*
+            процесс регистрации нового пользователя
+         */
+        if (partOfInput [0].equals("/registration")) {
+            if (!AuthService.hasLogin(partOfInput[1])) {
+                login = partOfInput [1];
+                ctx.writeAndFlush(Services.DecoderService.stringToByteBuf("/loginIsGood\n/"));
+            }
+        }
+        if (partOfInput [0].equals("/password")) {
+            AuthService.registrationLogin (login, Integer.parseInt(partOfInput[1]));
+            if (AuthService.hasLogin(login)) {
+                try {
+                    // создание директории для нового пользователя
+                    Files.createDirectory(Paths.get("Server/" + login));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                ctx.writeAndFlush(Services.DecoderService.stringToByteBuf("/Successful registration\n/"));
             }
         }
     }

@@ -32,4 +32,33 @@ public class AuthService{
         }
         return false;
     }
+
+    // проверка наличия логина в базе
+    // есть в базе true
+
+    public static boolean hasLogin (String login) {
+
+        String sql = String.format("select login from baza where login = '%s'", login);
+        try {
+            ResultSet resultSet = statement.executeQuery(sql);
+            if(resultSet.next()) {
+                    return true;
+            }
+        } catch (SQLException throwable) {
+            throwable.printStackTrace();
+        }
+        return false;
+    }
+
+    // регистрация нового пользователя
+
+    public static void registrationLogin (String login, int pass) {
+        String sql = String.format("insert into baza values ('%s', '%s')", login, pass);
+        try {
+            statement.addBatch(sql);
+            statement.executeBatch();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }
