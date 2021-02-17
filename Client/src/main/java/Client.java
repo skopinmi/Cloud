@@ -1,62 +1,14 @@
-import java.io.*;
-import java.net.Socket;
+/*
+    Проект: Облачное хранилище на Java
+    выполнен с использованием Java фреймворка Netty
+    в рамках курса: Разработка сетевого хранилища на Java
+    Geek University Java-разработки 2020 г.
+
+    Консольный клиент
+ */
 
 public class Client {
-
     public static void main(String[] args) {
-        binaryClient();
-    }
-    public static void binaryClient () {
-        try (Socket socket = new Socket("localhost", 8089)) {
-            File file = new File("client\\src\\file.txt");
-            sendCommand("qwe;", socket);
-            sendFile(file, socket);
-        } catch (IOException e) {
-            System.out.println(e);
-        }
-
-    }
-//    отправляем файл, метка/разделитель перед файлом $
-    public static void sendFile (File file, Socket socket) {
-        try ( FileInputStream fileInputStream = new FileInputStream(file);
-              BufferedInputStream out = new BufferedInputStream(fileInputStream)){
-//    определение имени файла и разделитель + отправка
-            socket.getOutputStream().write((int)'$');
-            String fileName = file.getName();
-            for (int i = 0; i < fileName.length(); i++) {
-                socket.getOutputStream().write((int)fileName.charAt(i));
-            }
-//    определение размера файла и отправка  < надо делать
-//            socket.getOutputStream().write((int)'$');
-//            long fileSize = file.length();
-//
-//            socket.getOutputStream().write((int) 'S');
-//    отправляем содержимое
-            int n;
-            socket.getOutputStream().write((int)'$');
-
-            while ((n = out.read()) != -1) {
-                socket.getOutputStream().write(n);
-                System.out.println(n);
-            }
-
-            System.out.println("отправил файл");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-//    отправляем команду разделитель %
-    public static void sendCommand (String com, Socket socket){
-        com = "%" + com;
-        byte [] command = com.getBytes();
-        for (int i = 0; i < command.length; i++){
-            try {
-                socket.getOutputStream().write(command[i]);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        System.out.println("отправил команду");
+        new Thread(new NettyClient()).start();
     }
 }
